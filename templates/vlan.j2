@@ -1,0 +1,9 @@
+
+{%- if vlan_list is defined%}
+    {%- for vlan in vlan_list|sort(attribute='id') %}
+vlan {{vlan.id}}
+ name {{vlan.name|upper}}
+!
+    {%- endfor %}
+{%- endif %}
+

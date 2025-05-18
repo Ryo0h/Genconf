@@ -1,0 +1,6 @@
+id,name,layer,ip,mask,vrf,acl,direction,dhcp
+66,visio,l3,192.168.1.0,255.255.255.0,,,,
+54,printers,l3,192.168.10.0,255.255.255.0,,my_acl,out,
+98,users,l2,,,,,,
+15,wifi,l3,192.168.80.0,255.255.255.0,my_vrf,my_acl,,true
+45,iot,l2,,,,,,

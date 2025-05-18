@@ -1,0 +1,30 @@
+{%- for server in global_config.tacacs.tacacs_server %}
+tacacs server {{server.name}}
+ address ipv4 {{server.ip}} auth-port 1812 acct-port 1813
+ key 0 {{server.key}}
+!
+{%- endfor %}
+!
+aaa group server tacacs+ {{global_config.tacacs.tacacs_group}}
+{%- for server in global_config.tacacs.tacacs_server %}
+ server name {{server.name}}
+{%- endfor %}
+!
+aaa authentication login default group {{global_config.tacacs.tacacs_group}} local
+aaa authentication enable default group {{global_config.tacacs.tacacs_group}} enable
+aaa authorization exec default group {{global_config.tacacs.tacacs_group}} local if-authenticated
+aaa authorization commands 0 default group {{global_config.tacacs.tacacs_group}} local
+aaa authorization commands 1 default group {{global_config.tacacs.tacacs_group}} local
+aaa authorization commands 15 default group {{global_config.tacacs.tacacs_group}} local
+aaa authorization config-commands
+{#- aaa authorization console #}
+aaa accounting exec default start-stop group {{global_config.tacacs.tacacs_group}}
+aaa accounting commands 1 default start-stop group {{global_config.tacacs.tacacs_group}}
+aaa accounting commands 15 default start-stop group {{global_config.tacacs.tacacs_group}}
+!
+line vty 0 4
+ authorization exec default
+ authorization commands 0 default
+ authorization commands 1 default
+ authorization commands 15 default
+!

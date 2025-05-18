@@ -1,0 +1,27 @@
+# Environnements virtuels
+.venv/
+venv/
+env/
+
+# Fichiers temporaires ou backup
+*.pyc
+__pycache__/
+*.swp
+*~
+
+# Données générées
+/output/
+
+# Données sensibles ou temporaires
+*.log
+*.tmp
+
+# Configuration utilisateur VSCode
+.vscode/
+
+# Fichiers de config système
+.DS_Store
+
+# Données confidentielles possibles
+/data/banner_*.txt
+/data/*.bak
