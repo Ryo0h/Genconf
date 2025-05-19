@@ -51,6 +51,9 @@ Contient les paramètres globaux du switch (hostname, VTP, TACACS, bannières, e
   "dhcp_relay": ["5.5.5.5", "6.6.6.6"]
 }
 ```
+Les paramètres venant en premier (clef "switch") sont les plus susceptibles de changer d'un switch à l'autre. Les autres restent souvent les mêmes au sein d'une même organisation (configuration Tacacs+, radus, comptes locaux, etc)
+Modifier directement les valeurs  dans le fichier. 
+⚠️ : Il n'y a pas (pour le moment) de vérification des données (adresses IP valides, paramètre IOS précis...)
 
 ### `vlan.csv`
 Contient les informations sur les VLANs :
@@ -60,6 +63,7 @@ id,name,layer,ip,mask,vrf,dhcp,acl,direction
 10,Management,l3,192.168.10.1,255.255.255.0,mgmt,True,,
 20,Users,l2,,,,,,
 ```
+Si une donnée n'est pas nécessaire, par exemple si un vlan n'appartient pas à une VRF ou s'il n'y a pas d'ACL associée, laisser le champs totalement vide.
 
 ### `iface.csv`
 Contient les interfaces physiques ou logiques :
@@ -69,6 +73,7 @@ name,description,mode,access_vlan,trunk_vlans,enabled
 Gig1/0/1,User Access,access,20,,True
 Po1,Uplink,trunk,,10;20;30,True
 ```
+Si une donnée n'est pas nécessaire, laisser le champs totalement vide.
 
 ---
 
@@ -77,9 +82,11 @@ Po1,Uplink,trunk,,10;20;30,True
 - pip
 
 Installer les dépendances :
+Dans le terminal , à la racine du projet : 
 ```bash
 pip install -r requirements.txt
 ```
+Sinon, installer les package importé dans le script mannuellement avec pip.
 
 ---
 
@@ -90,9 +97,11 @@ python genconf.py
 ```
 
 Le script va :
-1. Lire les données depuis `data/`
-2. Charger et rendre les templates Jinja2 dans `templates/`
-3. Générer un fichier `.conf` pour chaque bloc de configuration dans `output/<hostname>/`
+1. Lire les données renseignées depuis le répertoire `data/`
+2. Charger et rendre les templates Jinja2 dans le répertoire `templates/`
+3. Générer un fichier `.conf` pour chaque bloc de configuration dans le répertoire `output/<hostname>/`, ainsi qu'une configuration globale. Il génère un nouveau dossier portant le hostname du switch renseigné dans le fichier global_config.json.
+⚠️ Si un dossier portant le même hostname que celui renseigné dans le JSON est déjà existant, il sera écrasé par la nouvelle généraiton du script.
+
 
 ---
 
@@ -125,6 +134,7 @@ interface Port-channel1
 ## 🚧 TODOs possibles
 - Validation de schéma JSON
 - Support du rendu dans plusieurs formats (YAML, CLI, etc.)
+- ajout des templates routing
 - Interface utilisateur simple (CLI interactive ou GUI)
 
 ---

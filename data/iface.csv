@@ -1,7 +1,7 @@
 name,description,mode,vlan,allowed_vlan,port_channel,nac_enabled
 gi1/0/3,imprimantes,access,50,,,
 twe1/1/1,uplink,trunk,99,all,10,
-po10,uplink,trunk,99,all,
+po10,uplink,trunk,99,all,,
 twe2/1/2,test,trunk,99,"2,3,4,5,9-12,50",,
 gi1/0/40,users,access,10,,,
 gi1/0/3,users,access,10,,,true
