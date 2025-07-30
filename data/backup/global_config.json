@@ -1,0 +1,42 @@
+{
+  "switch": {
+    "hostname": "ENTER_HOSTNAME",
+    "default_gw": "X.X.X.X",
+    "mgmt_iface": "vlanXXX",
+    "domain_name": "riss.local",
+    "stp_priority": "8192",
+    "enable_password": "Cisco123",
+    "tacacs_enabled": true,
+    "radius_enabled": true,
+    "vtp_mode": "transparent",
+    "vrf": false
+  },
+  "dhcp_relay": ["W.X.Y.Z","W.X.Y.Z"],
+  "ntp_server": ["W.X.Y.Z","W.X.Y.Z"],
+  "name_server": ["W.X.Y.Z","W.X.Y.Z"],
+  "syslog": "W.X.Y.Z",
+  "vtp": {"domain": "ENTER_DOMAIN","version": "2"},
+  "radius": {
+    "radius_group": "RADIUS_GROUP_NAME",
+    "critical_vlan": "CRITICAL_VLAN_ID",
+    "radius_server": [
+        {"name": "ISE1", "ip": "W.X.Y.Z", "key": "UNECRYPTED_KEY"},
+        {"name": "ISE2", "ip": "W.X.Y.Z", "key": "UNECRYPTED_KEY"}
+    ]
+  },
+  "tacacs": {
+    "tacacs_group": "TACACS_GROUP_NAME",
+    "tacacs_server": [
+        {"name": "ISE1","ip": "W.X.Y.Z","key": "UNECRYPTED_KEY"},
+        {"name": "ISE2","ip": "W.X.Y.Z","key": "UNECRYPTED_KEY"}
+    ]
+  },
+  "users": [
+    {"username": "USERNAME1","privilege": "15","password": "cisco123"},
+    {"username": "USERNAME2","privilege": "1","password": "cisco123"}
+  ],
+  "vrf":[
+    {"name": "VRF1","rd":"1500:2"},
+    {"name": "VRF2","rd":"1500:2"}
+  ]
+}
