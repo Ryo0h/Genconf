@@ -1,0 +1,22 @@
+{%- if vlan_list is defined %}
+    {%- for vlan in vlan_list|sort(attribute='id') %}
+        {%- if vlan.layer == 'l3' %}
+interface Vlan{{vlan.id}}
+ description {{vlan.name|upper}}
+        {%- if vlan.vrf != '' %}
+ vrf forwarding {{vlan.vrf}}
+        {%- endif %}
+ ip address {{vlan.ip}} {{vlan.mask}}
+         {%- if vlan.dhcp %}
+            {%- for dhcp_ip in global_config.dhcp_relay %}
+ ip helper-address {{dhcp_ip}}
+            {%- endfor %}
+         {%- endif %}
+ no ip redirects
+         {%- if vlan.acl != '' %}
+ ip access-group {{vlan.acl}} {{vlan.direction|default('in')}}
+         {%- endif %}
+!
+        {%- endif %}
+    {%- endfor %}
+{%- endif %}

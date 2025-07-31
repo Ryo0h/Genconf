@@ -1,0 +1,132 @@
+{%- for server in global_config.radius.radius_server %}
+radius server {{server.name}}
+ address ipv4 {{server.ip}} auth-port 1812 acct-port 1813
+ key 0 {{server.key}}
+!
+{%- endfor %}
+aaa group server radius {{global_config.radius.radius_group}}
+{%- for server in global_config.radius.radius_server %}
+ server name {{server.name}}
+{%- endfor %}
+ deadtime 15
+!
+aaa session-id common
+aaa authentication dot1x default group {{global_config.radius.radius_group}}
+aaa authorization network default group {{global_config.radius.radius_group}}
+aaa accounting dot1x default start-stop group {{global_config.radius.radius_group}}
+aaa accounting update newinfo periodic 2880
+dot1x system-auth-control
+!
+aaa server radius dynamic-author
+{%- for server in global_config.radius.radius_server %}
+ client {{server.ip}} server-key 0 {{server.key}}
+{%- endfor %}
+!
+{#- service template #}
+{%- if global_config.radius.critical_vlan != ""%}
+service-template Critical_Access
+ vlan {{global_config.radius.critical_vlan}}
+ access-group AAA-Down
+!
+{%- endif %}
+service-template Critical_Voice
+ voice vlan
+!
+{#- control classes #}
+class-map type control subscriber match-all AAA-Down_Auth_Host
+ match result-type aaa-timeout
+ match authorization-status authorized
+!
+class-map type control subscriber match-all AAA-Down_UnAuth_Host
+ match result-type aaa-timeout
+ match authorization-status unauthorized
+!
+class-map type control subscriber match-all Dot1x
+ match method dot1x
+!
+class-map type control subscriber match-all Dot1x_Failed
+ match method dot1x
+ match result-type method dot1x authoritative
+!         
+class-map type control subscriber match-all Dot1x_No-Resp
+ match method dot1x
+ match result-type method dot1x agent-not-found
+!
+class-map type control subscriber match-all Dot1x_Timeout
+ match method dot1x
+ match result-type method dot1x method-timeout
+!
+class-map type control subscriber match-any Critical_Auth
+ match activated-service-template Critical_Access
+ match activated-service-template Critical_Voice
+!
+class-map type control subscriber match-all MAB
+ match method mab
+!
+class-map type control subscriber match-all MAB_Failed
+ match method mab
+ match result-type method mab authoritative
+!         
+class-map type control subscriber match-none NOT_Critical_Auth
+ match activated-service-template Critical_Access
+ match activated-service-template Critical_Voice
+!
+{#- policy maps #}
+policy-map type control subscriber Dot1x-Default
+ event session-started match-all
+  10 class always do-until-failure
+   10 authenticate using dot1x priority 10
+ event authentication-failure match-first
+  5 class Dot1x_Failed do-until-failure
+   10 terminate dot1x
+   20 authenticate using mab priority 20
+  10 class AAA-Down_UnAuth_Host do-until-failure
+   10 clear-authenticated-data-hosts-on-port
+   20 activate service-template Critical_Access
+   30 activate service-template Critical_Voice
+   40 authorize
+   50 pause reauthentication
+  20 class AAA-Down_Auth_Host do-until-failure
+   10 pause reauthentication
+   20 authorize
+  30 class Dot1x_No-Resp do-until-failure
+   10 terminate dot1x
+   20 authenticate using mab priority 20
+  40 class MAB_Failed do-until-failure
+   10 terminate mab
+   20 authentication-restart 60
+  60 class always do-until-failure
+   10 terminate dot1x
+   20 terminate mab
+   30 authentication-restart 60
+ event agent-found match-all
+  10 class always do-until-failure
+   10 terminate mab
+   20 authenticate using dot1x priority 10
+ event aaa-available match-all
+  10 class Critical_Auth do-until-failure
+   10 clear-session
+  20 class NOT_Critical_Auth do-until-failure
+   10 resume reauthentication
+ event inactivity-timeout match-all
+  10 class always do-until-failure
+   10 clear-session
+ event authentication-success match-all
+   10 class always do-until-failure
+     10 activate service-template DEFAULT_LINKSEC_POLICY_SHOULD_SECURE
+ event violation match-all
+  10 class always do-until-failure
+   10 restrict
+!
+{#- port service templates#}
+template Port-Dot1x-Closed
+ authentication periodic
+ authentication timer reauthenticate server
+ mab
+ access-session host-mode multi-auth
+ access-session control-direction in
+ access-session closed
+ dot1x pae authenticator
+ access-session port-control auto
+ service-policy type control subscriber Dot1x-default
+!

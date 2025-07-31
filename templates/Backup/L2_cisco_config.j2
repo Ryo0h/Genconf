@@ -1,0 +1,138 @@
+!
+service tcp-keepalives-in
+service tcp-keepalives-out
+service timestamps debug datetime msec
+service timestamps log datetime localtime
+service password-encryption
+service sequence-numbers
+!
+{%- if global_config.switch.hostname != '' %}
+hostname {{global_config.switch.hostname|upper}}
+{%- else %}
+hostname UNDEFINED
+{%- endif%}
+!
+clock timezone CET 1 0
+clock summer-time CEST recurring last Sun Mar 2:00 last Sun Oct 3:00
+!
+{%- if global_config.switch.vrf %}
+  {%- for vrf in global_config.vrf %}
+vrf definition {{vrf.name}}
+ address-family ipv4
+ exit-address-family
+ rd {{vrf.rd}}
+!
+  {%- endfor %}
+{%- endif %}
+ip arp proxy disable
+!
+aaa new-model
+!
+{%- if not global_config.switch.tacacs_enabled %}
+aaa authentication login default local
+aaa authorization exec default local
+{%- else %}
+{%- include "tacacs.j2" %}
+{%- endif %}
+!
+{%- if global_config.name_server[0] != "" %}
+ip name-server {% for server in global_config.name_server -%} {{server}} {% endfor -%}  
+{%- endif %}
+ip domain lookup source-interface {{global_config.switch.mgmt_iface}}
+ip domain name {{global_config.switch.domain_name}}
+!
+login on-failure log
+login on-success log
+udld aggressive
+!
+{%- if global_config.switch.vtp_mode != "" %}
+vtp mode {{global_config.switch.vtp_mode}}
+  {%- if global_config.switch.vtp_mode not in ["off","transparent"] %}
+vtp version {{global_config.vtp.version}}
+vtp domain {{global_config.vtp.domain}}
+  {%- endif %}
+{%- endif %}
+!
+spanning-tree mode rapid-pvst
+{%- if global_config.switch.stp_priority != "" %}
+spanning-tree priority {{global_config.switch.stp_priority}}
+{%- endif %}
+!
+!
+errdisable recovery cause udld
+errdisable recovery cause bpduguard
+errdisable recovery cause channel-misconfig
+errdisable recovery cause storm-control
+errdisable recovery interval 30
+!
+{%- if global_config.switch.enable_password != "" %}
+enable algorithm-type script secret {{global_config.switch.enable_password}}
+{%- endif %}
+!
+{%- if global_config.users[0].username != "" %}
+  {%- for user in global_config.users %}
+username {{user.username}} privilege {{user.privilege}} algorithm-type script secret {{user.password}}
+  {%- endfor %}
+{%- endif %}
+!
+ip ssh version 2
+crypto key generate rsa modulus 2048
+!
+ip ssh source-interface {{global_config.switch.mgmt_iface}}
+ip ssh logging events
+!
+ip default-gateway {{global_config.switch.default_gw}}
+no ip routing
+!
+no ip http server
+!
+netconf-yang
+!
+{%- if global_config.ntp_server[0] != "" %}
+  {%- for server in global_config.ntp_server %}
+ntp server {{server}}
+  {%- endfor %}
+ntp source-interface {{global_config.switch.mgmt_iface}}
+{%- endif %}
+!
+{%- if global_config.syslog != "" %}
+logging host {{global_config.syslog}}
+logging source-interface {{global_config.switch.mgmt_iface}}
+{%- endif %}
+!
+{%- include "vlan.j2" -%}
+!
+{%- include "svi.j2" %}
+!
+{%- if global_config.switch.radius_enabled %}
+{%- include "aaa.j2" %}
+{%- endif %}
+{%- if banner_login|length>10 %}
+banner login ^C
+{{banner_login}}
+^C
+{%- endif %}
+!
+{%- if banner_exec|length>10 %}
+banner exec ^C
+{{banner_exec}}
+^C
+{%- endif %}
+!
+{%- include "iface.j2" %}
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+ stopbits 1
+line vty 0 4
+ exec-timeout 15 0
+ logging synchronous
+ transport preferred none
+ transport input ssh
+line vty 5 15
+ exec-timeout 15 0
+ logging synchronous
+ transport preferred none
+ transport input ssh
+!

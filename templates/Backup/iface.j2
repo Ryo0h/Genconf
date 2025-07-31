@@ -1,0 +1,48 @@
+{%- if iface_list is defined %}
+    {%- for iface in iface_list|sort(attribute='name') %}
+            {%- set name = iface.name|lower %}
+            {%- if name.startswith('po') %}
+interface {{iface.name}}
+ description {{iface.description}}
+ switchport mode {{iface.mode}}
+            {%- if iface.mode == "trunk" %}
+ switchport trunk native vlan {{iface.vlan}}
+ switchport trunk allowed vlan {{iface.allowed_vlan}}
+            {%- else%}
+ switchport access vlan {{iface.vlan}}
+            {%- endif %}
+ switchport nonegotiate
+ storm-control broadcast level 1.0
+ storm-control multicast level 1.0
+ !
+        {%- endif %}
+    {%- endfor %}
+    {%- for iface in iface_list|sort(attribute='name') %}
+        {%- set name = iface.name|lower %}
+        {%- if not iface.name.startswith('po') %}
+interface {{iface.name}}
+ description {{iface.description}}
+ switchport mode {{iface.mode}}
+            {%- if iface.mode == "trunk" %}
+ switchport trunk native vlan {{iface.vlan}}
+ switchport trunk allowed vlan {{iface.allowed_vlan}}
+            {%- else%}
+ switchport access vlan {{iface.vlan}}
+            {%- endif %}
+ switchport nonegotiate
+            {%- if iface.nac_enabled and global_config.switch.radius_enabled %}
+ source template Port-Dot1x-Closed
+ dot1x timeout tx-period 7
+ dot1x max-reauth-req 3
+            {%- endif %}
+ storm-control broadcast level 5.0
+ storm-control multicast level 5.0
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+            {%- if iface.port_channel != "" %}
+ channel-group {{iface.port_channel}} mode active
+            {%- endif%}
+!
+        {%- endif %}
+    {%- endfor %}
+{%- endif %}
